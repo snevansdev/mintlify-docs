@@ -349,6 +349,173 @@ paths:
                     format: date-time
                     example: "2024-01-15T10:30:00Z"
 
+  # Path with multiple security schemes (OR logic - choose one)
+  /anything/multi-auth-or:
+    get:
+      summary: Get with multiple authentication options
+      description: This endpoint accepts multiple authentication methods. User can choose any one of them.
+      security:
+        - basicAuth: []
+        - bearerAuth: []
+        - apiKeyHeader: []
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Successfully authenticated with one of multiple methods"
+                  auth_method_used:
+                    type: string
+                    example: "basicAuth"
+                  available_methods:
+                    type: array
+                    items:
+                      type: string
+                    example: ["basicAuth", "bearerAuth", "apiKeyHeader"]
+                  timestamp:
+                    type: string
+                    format: date-time
+                    example: "2024-01-15T10:30:00Z"
+        '401':
+          description: Unauthorized - None of the authentication methods provided are valid
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Authentication required. Please provide valid credentials using one of the supported methods."
+                  supported_methods:
+                    type: array
+                    items:
+                      type: string
+                    example: ["basicAuth", "bearerAuth", "apiKeyHeader"]
+
+  # Path with multiple security schemes (AND logic - require all)
+  /anything/multi-auth-and:
+    get:
+      summary: Get with multiple authentication requirements
+      description: This endpoint requires ALL specified authentication methods to be provided simultaneously.
+      security:
+        - basicAuth: []
+          bearerAuth: []
+          apiKeyHeader: []
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Successfully authenticated with all required methods"
+                  auth_methods_verified:
+                    type: array
+                    items:
+                      type: string
+                    example: ["basicAuth", "bearerAuth", "apiKeyHeader"]
+                  security_level:
+                    type: string
+                    example: "maximum"
+                  user_info:
+                    type: object
+                    properties:
+                      basic_auth_user:
+                        type: string
+                        example: "john_doe"
+                      bearer_token_user:
+                        type: string
+                        example: "user_123"
+                      api_key_owner:
+                        type: string
+                        example: "org_456"
+                  timestamp:
+                    type: string
+                    format: date-time
+                    example: "2024-01-15T10:30:00Z"
+        '401':
+          description: Unauthorized - One or more required authentication methods are missing or invalid
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "All authentication methods are required: basicAuth, bearerAuth, and apiKeyHeader"
+                  missing_methods:
+                    type: array
+                    items:
+                      type: string
+                    example: ["bearerAuth"]
+                  required_methods:
+                    type: array
+                    items:
+                      type: string
+                    example: ["basicAuth", "bearerAuth", "apiKeyHeader"]
+    post:
+      summary: Post with multiple authentication requirements
+      description: This endpoint requires ALL specified authentication methods for POST requests.
+      security:
+        - basicAuth: []
+          bearerAuth: []
+          apiKeyHeader: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                secure_data:
+                  type: string
+                  example: "Highly sensitive data requiring maximum security"
+                priority:
+                  type: string
+                  enum: [low, medium, high, critical]
+                  example: "critical"
+              required:
+                - secure_data
+                - priority
+      responses:
+        '200':
+          description: Successfully processed with maximum security
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Data processed with maximum security"
+                  security_audit:
+                    type: object
+                    properties:
+                      basic_auth_verified:
+                        type: boolean
+                        example: true
+                      bearer_token_valid:
+                        type: boolean
+                        example: true
+                      api_key_authorized:
+                        type: boolean
+                        example: true
+                      encryption_level:
+                        type: string
+                        example: "AES-256"
+                  processed_at:
+                    type: string
+                    format: date-time
+                    example: "2024-01-15T10:30:00Z"
+
 # Security Schemes
 components:
   securitySchemes:
