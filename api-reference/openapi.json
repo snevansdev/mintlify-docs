@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
-  title: Security Schemes API
-  description: API demonstrating different security schemes for different paths
+  title: Response Validation API
+  description: API for testing OpenAPI 3.1 response validation capabilities
   version: 1.0.0
   contact:
     name: API Support
@@ -11,41 +11,63 @@ info:
     url: https://opensource.org/licenses/MIT
 
 servers:
-  - url: https://httpbin.org
+  - url: https://api.example.com/v1
     description: Production server
-
-# Global security (applies to all paths unless overridden)
-security:
-  - apiKey: []
+  - url: https://staging-api.example.com/v1
+    description: Staging server
 
 paths:
-  # Path with Basic Authentication
-  /anything/basic-auth:
+  # 直接写response的端点 - 单个media-type
+  /users/{id}:
     get:
-      summary: Get with Basic Authentication
-      description: This endpoint requires Basic Authentication
-      security:
-        - basicAuth: []
+      summary: Get user by ID
+      description: Retrieve a specific user by their ID
+      operationId: getUserById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: User ID
+          schema:
+            type: integer
+            minimum: 1
       responses:
         '200':
-          description: Successful response
+          description: User found successfully
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  message:
+                  id:
+                    type: integer
+                    description: User ID
+                  name:
                     type: string
-                    example: "Successfully authenticated with Basic Auth"
-                  user:
+                    description: User name
+                  email:
                     type: string
-                    example: "john_doe"
-                  timestamp:
+                    format: email
+                    description: User email
+                  created_at:
                     type: string
                     format: date-time
-                    example: "2024-01-15T10:30:00Z"
-        '401':
-          description: Unauthorized - Invalid credentials
+                    description: User creation timestamp
+                required:
+                  - id
+                  - name
+                  - email
+                  - created_at
+              examples:
+                success:
+                  summary: Successful response
+                  value:
+                    id: 1
+                    name: "John Doe"
+                    email: "john.doe@example.com"
+                    created_at: "2024-01-15T10:30:00Z"
+        '404':
+          description: User not found
           content:
             application/json:
               schema:
@@ -53,336 +75,118 @@ paths:
                 properties:
                   error:
                     type: string
-                    example: "Invalid credentials"
-        '403':
-          description: Forbidden - Insufficient permissions
-    post:
-      summary: Post with Basic Authentication
-      description: This endpoint requires Basic Authentication for POST requests
-      security:
-        - basicAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                data:
-                  type: string
-                  example: "Sample data"
-              required:
-                - data
+                    description: Error message
+                  code:
+                    type: string
+                    description: Error code
+                required:
+                  - error
+                  - code
+              examples:
+                not_found:
+                  summary: User not found
+                  value:
+                    error: "User not found"
+                    code: "USER_NOT_FOUND"
+
+  # 直接写response的端点 - 多个media-type
+  /documents/{id}:
+    get:
+      summary: Get document by ID
+      description: Retrieve a document in multiple formats
+      operationId: getDocumentById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Document ID
+          schema:
+            type: string
+            pattern: '^[a-zA-Z0-9-]+$'
       responses:
         '200':
-          description: Successfully created
+          description: Document retrieved successfully
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  message:
-                    type: string
-                    example: "Data created successfully"
                   id:
                     type: string
-                    example: "12345"
-
-  # Path with Bearer Token (JWT)
-  /anything/bearer-token:
-    get:
-      summary: Get with Bearer Token
-      description: This endpoint requires Bearer Token authentication
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json:
+                    description: Document ID
+                  title:
+                    type: string
+                    description: Document title
+                  content:
+                    type: string
+                    description: Document content
+                  format:
+                    type: string
+                    enum: [json, xml, text]
+                    description: Document format
+                  size:
+                    type: integer
+                    description: Document size in bytes
+                required:
+                  - id
+                  - title
+                  - content
+                  - format
+                  - size
+              examples:
+                json_document:
+                  summary: JSON document
+                  value:
+                    id: "doc-123"
+                    title: "Sample JSON Document"
+                    content: '{"key": "value"}'
+                    format: "json"
+                    size: 25
+            application/xml:
               schema:
                 type: object
                 properties:
-                  message:
+                  id:
                     type: string
-                    example: "Successfully authenticated with Bearer Token"
-                  user_id:
+                    description: Document ID
+                  title:
                     type: string
-                    example: "user_123"
-                  permissions:
-                    type: array
-                    items:
-                      type: string
-                    example: ["read", "write"]
-        '401':
-          description: Unauthorized - Invalid token
-        '403':
-          description: Forbidden - Token expired or insufficient permissions
-
-  # Path with OAuth 2.0
-  /anything/oauth2.0:
-    get:
-      summary: Get with OAuth 2.0
-      description: This endpoint requires OAuth 2.0 authentication
-      security:
-        - oauth2:
-            - read:users
-            - write:users
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json:
+                    description: Document title
+                  content:
+                    type: string
+                    description: Document content
+                  format:
+                    type: string
+                    enum: [json, xml, text]
+                    description: Document format
+                  size:
+                    type: integer
+                    description: Document size in bytes
+                required:
+                  - id
+                  - title
+                  - content
+                  - format
+                  - size
+              examples:
+                xml_document:
+                  summary: XML document
+                  value:
+                    id: "doc-456"
+                    title: "Sample XML Document"
+                    content: "<root><item>value</item></root>"
+                    format: "xml"
+                    size: 35
+            text/plain:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: "Successfully authenticated with OAuth 2.0"
-                  scopes:
-                    type: array
-                    items:
-                      type: string
-                    example: ["read:users", "write:users"]
-                  user_info:
-                    type: object
-                    properties:
-                      id:
-                        type: string
-                        example: "oauth_user_456"
-                      email:
-                        type: string
-                        example: "user@example.com"
-        '401':
-          description: Unauthorized - Invalid OAuth token
-        '403':
-          description: Forbidden - Insufficient OAuth scopes
-
-  # Path with API Key in Header
-  /anything/api-key-header:
-    get:
-      summary: Get with API Key in Header
-      description: This endpoint requires API Key in header
-      security:
-        - apiKeyHeader: []
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: "Successfully authenticated with API Key in Header"
-                  api_version:
-                    type: string
-                    example: "v1.0"
-                  rate_limit:
-                    type: object
-                    properties:
-                      remaining:
-                        type: integer
-                        example: 999
-                      reset_time:
-                        type: string
-                        format: date-time
-                        example: "2024-01-15T11:00:00Z"
-        '401':
-          description: Unauthorized - Invalid API key
-        '429':
-          description: Too Many Requests - Rate limit exceeded
-
-  # Path with API Key in Query
-  /anything/api-key-query:
-    get:
-      summary: Get with API Key in Query
-      description: This endpoint requires API Key in query parameter
-      security:
-        - apiKeyQuery: []
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: "Successfully authenticated with API Key in Query"
-                  query_params:
-                    type: object
-                    properties:
-                      api_key:
-                        type: string
-                        example: "***"
-                      timestamp:
-                        type: string
-                        example: "2024-01-15T10:30:00Z"
-        '401':
-          description: Unauthorized - Invalid API key
+                type: string
+                description: Plain text document content
+              examples:
+                text_document:
+                  summary: Plain text document
+                  value: "This is a plain text document content."
         '400':
-          description: Bad Request - Missing API key parameter
-
-  # Path with Digest Authentication
-  /anything/digest-auth:
-    get:
-      summary: Get with Digest Authentication
-      description: This endpoint requires Digest Authentication
-      security:
-        - digestAuth: []
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: "Successfully authenticated with Digest Auth"
-                  realm:
-                    type: string
-                    example: "Secure Area"
-                  nonce:
-                    type: string
-                    example: "dcd98b7102dd2f0e8b11d0f600bfb0c093"
-        '401':
-          description: Unauthorized - Invalid digest credentials
-
-  # Path with Mutual TLS
-  /anything/mutual-tls:
-    get:
-      summary: Get with Mutual TLS
-      description: This endpoint requires Mutual TLS authentication
-      security:
-        - mutualTLS: []
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: "Successfully authenticated with Mutual TLS"
-                  certificate_info:
-                    type: object
-                    properties:
-                      subject:
-                        type: string
-                        example: "CN=client.example.com"
-                      issuer:
-                        type: string
-                        example: "CN=CA.example.com"
-                      valid_until:
-                        type: string
-                        format: date-time
-                        example: "2025-01-15T10:30:00Z"
-        '401':
-          description: Unauthorized - Invalid client certificate
-
-  # Path with no security (uses global security)
-  /anything/public:
-    get:
-      summary: Get public endpoint
-      description: This endpoint uses global security (API Key)
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: "Public endpoint accessed successfully"
-                  public_data:
-                    type: object
-                    properties:
-                      version:
-                        type: string
-                        example: "1.0.0"
-                      status:
-                        type: string
-                        example: "operational"
-                      timestamp:
-                        type: string
-                        format: date-time
-                        example: "2024-01-15T10:30:00Z"
-        '401':
-          description: Unauthorized - Missing API key
-    post:
-      summary: Post to public endpoint
-      description: This endpoint uses global security (API Key)
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                public_message:
-                  type: string
-                  example: "Hello from public endpoint"
-              required:
-                - public_message
-      responses:
-        '200':
-          description: Successfully processed
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: "Message processed successfully"
-                  received_at:
-                    type: string
-                    format: date-time
-                    example: "2024-01-15T10:30:00Z"
-
-  # Path with multiple security schemes (OR logic - choose one)
-  /anything/multi-auth-or:
-    get:
-      summary: Get with multiple authentication options
-      description: This endpoint accepts multiple authentication methods. User can choose any one of them.
-      security:
-        - basicAuth: []
-        - bearerAuth: []
-        - apiKeyHeader: []
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: "Successfully authenticated with one of multiple methods"
-                  auth_method_used:
-                    type: string
-                    example: "basicAuth"
-                  available_methods:
-                    type: array
-                    items:
-                      type: string
-                    example: ["basicAuth", "bearerAuth", "apiKeyHeader"]
-                  timestamp:
-                    type: string
-                    format: date-time
-                    example: "2024-01-15T10:30:00Z"
-        '401':
-          description: Unauthorized - None of the authentication methods provided are valid
+          description: Invalid document ID
           content:
             application/json:
               schema:
@@ -390,84 +194,70 @@ paths:
                 properties:
                   error:
                     type: string
-                    example: "Authentication required. Please provide valid credentials using one of the supported methods."
-                  supported_methods:
-                    type: array
-                    items:
-                      type: string
-                    example: ["basicAuth", "bearerAuth", "apiKeyHeader"]
-
-  # Path with multiple security schemes (AND logic - require all)
-  /anything/multi-auth-and:
-    get:
-      summary: Get with multiple authentication requirements
-      description: This endpoint requires ALL specified authentication methods to be provided simultaneously.
-      security:
-        - basicAuth: []
-          bearerAuth: []
-          apiKeyHeader: []
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: "Successfully authenticated with all required methods"
-                  auth_methods_verified:
-                    type: array
-                    items:
-                      type: string
-                    example: ["basicAuth", "bearerAuth", "apiKeyHeader"]
-                  security_level:
-                    type: string
-                    example: "maximum"
-                  user_info:
+                    description: Error message
+                  details:
                     type: object
                     properties:
-                      basic_auth_user:
+                      field:
                         type: string
-                        example: "john_doe"
-                      bearer_token_user:
+                        description: Field that caused the error
+                      value:
                         type: string
-                        example: "user_123"
-                      api_key_owner:
-                        type: string
-                        example: "org_456"
-                  timestamp:
-                    type: string
-                    format: date-time
-                    example: "2024-01-15T10:30:00Z"
-        '401':
-          description: Unauthorized - One or more required authentication methods are missing or invalid
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: "All authentication methods are required: basicAuth, bearerAuth, and apiKeyHeader"
-                  missing_methods:
-                    type: array
-                    items:
-                      type: string
-                    example: ["bearerAuth"]
-                  required_methods:
-                    type: array
-                    items:
-                      type: string
-                    example: ["basicAuth", "bearerAuth", "apiKeyHeader"]
+                        description: Invalid value provided
+                required:
+                  - error
+                  - details
+
+  # 引用response components的端点 - 单个media-type
+  /products/{id}:
+    get:
+      summary: Get product by ID
+      description: Retrieve a specific product by its ID
+      operationId: getProductById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Product ID
+          schema:
+            type: string
+            pattern: '^[A-Z]{2}[0-9]{6}$'
+      responses:
+        '200':
+          $ref: '#/components/responses/ProductResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerErrorResponse'
+
+  # 引用response components的端点 - 多个media-type
+  /files/{id}:
+    get:
+      summary: Get file by ID
+      description: Retrieve a file in multiple formats
+      operationId: getFileById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: File ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          $ref: '#/components/responses/MultiFormatFileResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerErrorResponse'
+
+  # 批量操作端点 - 使用引用response
+  /users:
     post:
-      summary: Post with multiple authentication requirements
-      description: This endpoint requires ALL specified authentication methods for POST requests.
-      security:
-        - basicAuth: []
-          bearerAuth: []
-          apiKeyHeader: []
+      summary: Create multiple users
+      description: Create multiple users in a single request
+      operationId: createUsers
       requestBody:
         required: true
         content:
@@ -475,122 +265,407 @@ paths:
             schema:
               type: object
               properties:
-                secure_data:
-                  type: string
-                  example: "Highly sensitive data requiring maximum security"
-                priority:
-                  type: string
-                  enum: [low, medium, high, critical]
-                  example: "critical"
+                users:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/UserInput'
+                  minItems: 1
+                  maxItems: 100
               required:
-                - secure_data
-                - priority
+                - users
       responses:
-        '200':
-          description: Successfully processed with maximum security
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: "Data processed with maximum security"
-                  security_audit:
-                    type: object
-                    properties:
-                      basic_auth_verified:
-                        type: boolean
-                        example: true
-                      bearer_token_valid:
-                        type: boolean
-                        example: true
-                      api_key_authorized:
-                        type: boolean
-                        example: true
-                      encryption_level:
-                        type: string
-                        example: "AES-256"
-                  processed_at:
-                    type: string
-                    format: date-time
-                    example: "2024-01-15T10:30:00Z"
+        '201':
+          $ref: '#/components/responses/BulkCreateResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestResponse'
+        '422':
+          $ref: '#/components/responses/ValidationErrorResponse'
 
-# Security Schemes
 components:
-  securitySchemes:
-    # Basic Authentication
-    basicAuth:
-      type: http
-      scheme: basic
-      description: Basic authentication using username and password
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: User ID
+        name:
+          type: string
+          description: User name
+        email:
+          type: string
+          format: email
+          description: User email
+        created_at:
+          type: string
+          format: date-time
+          description: User creation timestamp
+        updated_at:
+          type: string
+          format: date-time
+          description: User last update timestamp
+        status:
+          type: string
+          enum: [active, inactive, pending]
+          description: User status
+      required:
+        - id
+        - name
+        - email
+        - created_at
+        - status
 
-    # Bearer Token (JWT)
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
-      description: Bearer token authentication using JWT
+    UserInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: User name
+        email:
+          type: string
+          format: email
+          description: User email
+        status:
+          type: string
+          enum: [active, inactive, pending]
+          default: active
+          description: User status
+      required:
+        - name
+        - email
 
-    # OAuth 2.0
-    oauth2:
-      type: oauth2
-      description: OAuth 2.0 authentication
-      flows:
-        authorizationCode:
-          authorizationUrl: https://dev-3jc1owmgnpvencur.us.auth0.com/authorize
-          tokenUrl: https://dev-3jc1owmgnpvencur.us.auth0.com/oauth/token
-          scopes:
-            read:users: Read user information
-            write:users: Write user information
-            read:posts: Read posts
-            write:posts: Write posts
-        clientCredentials:
-          tokenUrl: https://dev-3jc1owmgnpvencur.us.auth0.com/oauth/token
-          scopes:
-            read:users: Read user information
-            write:users: Write user information
-        implicit:
-          authorizationUrl: https://dev-3jc1owmgnpvencur.us.auth0.com/authorize
-          scopes:
-            read:users: Read user information
-            write:users: Write user information
+    Product:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Product ID
+        name:
+          type: string
+          description: Product name
+        description:
+          type: string
+          description: Product description
+        price:
+          type: number
+          format: float
+          minimum: 0
+          description: Product price
+        category:
+          type: string
+          description: Product category
+        in_stock:
+          type: boolean
+          description: Whether product is in stock
+        created_at:
+          type: string
+          format: date-time
+          description: Product creation timestamp
+      required:
+        - id
+        - name
+        - price
+        - category
+        - in_stock
+        - created_at
 
-    # API Key in Header
-    apiKeyHeader:
-      type: apiKey
-      in: header
-      name: X-API-Key
-      description: API key passed in header
+    File:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: File ID
+        name:
+          type: string
+          description: File name
+        size:
+          type: integer
+          minimum: 0
+          description: File size in bytes
+        mime_type:
+          type: string
+          description: File MIME type
+        url:
+          type: string
+          format: uri
+          description: File download URL
+        created_at:
+          type: string
+          format: date-time
+          description: File creation timestamp
+      required:
+        - id
+        - name
+        - size
+        - mime_type
+        - url
+        - created_at
 
-    # API Key in Query
-    apiKeyQuery:
-      type: apiKey
-      in: query
-      name: api_key
-      description: API key passed in query parameter
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+        code:
+          type: string
+          description: Error code
+        details:
+          type: object
+          additionalProperties: true
+          description: Additional error details
+        timestamp:
+          type: string
+          format: date-time
+          description: Error timestamp
+      required:
+        - error
+        - code
+        - timestamp
 
-    # Global API Key (used by default)
-    apiKey:
-      type: apiKey
-      in: header
-      name: Authorization
-      description: Global API key for endpoints without specific security
+    ValidationError:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+        code:
+          type: string
+          description: Error code
+        validation_errors:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+                description: Field name
+              message:
+                type: string
+                description: Validation message
+              value:
+                description: Invalid value
+            required:
+              - field
+              - message
+        timestamp:
+          type: string
+          format: date-time
+          description: Error timestamp
+      required:
+        - error
+        - code
+        - validation_errors
+        - timestamp
 
-    # Digest Authentication
-    digestAuth:
-      type: http
-      scheme: digest
-      description: Digest authentication
+  responses:
+    ProductResponse:
+      description: Product retrieved successfully
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Product'
+          examples:
+            success:
+              summary: Successful product response
+              value:
+                id: "PR123456"
+                name: "Sample Product"
+                description: "A sample product for testing"
+                price: 29.99
+                category: "Electronics"
+                in_stock: true
+                created_at: "2024-01-15T10:30:00Z"
 
-    # Mutual TLS
-    mutualTLS:
-      type: mutualTLS
-      description: Mutual TLS authentication using client certificates
+    MultiFormatFileResponse:
+      description: File retrieved successfully in multiple formats
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/File'
+          examples:
+            json_file:
+              summary: JSON file response
+              value:
+                id: "550e8400-e29b-41d4-a716-446655440000"
+                name: "data.json"
+                size: 1024
+                mime_type: "application/json"
+                url: "https://api.example.com/files/550e8400-e29b-41d4-a716-446655440000/download"
+                created_at: "2024-01-15T10:30:00Z"
+        application/xml:
+          schema:
+            type: object
+            properties:
+              file:
+                $ref: '#/components/schemas/File'
+          examples:
+            xml_file:
+              summary: XML file response
+              value:
+                file:
+                  id: "550e8400-e29b-41d4-a716-446655440001"
+                  name: "data.xml"
+                  size: 2048
+                  mime_type: "application/xml"
+                  url: "https://api.example.com/files/550e8400-e29b-41d4-a716-446655440001/download"
+                  created_at: "2024-01-15T10:30:00Z"
+        text/plain:
+          schema:
+            type: string
+            description: Plain text file content
+          examples:
+            text_file:
+              summary: Plain text file response
+              value: "This is the content of a plain text file."
 
-# Tags for better organization
+    NotFoundResponse:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          examples:
+            not_found:
+              summary: Resource not found
+              value:
+                error: "Resource not found"
+                code: "RESOURCE_NOT_FOUND"
+                details:
+                  resource_type: "user"
+                  resource_id: "123"
+                timestamp: "2024-01-15T10:30:00Z"
+
+    BadRequestResponse:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          examples:
+            bad_request:
+              summary: Bad request
+              value:
+                error: "Invalid request parameters"
+                code: "BAD_REQUEST"
+                details:
+                  missing_fields: ["name", "email"]
+                timestamp: "2024-01-15T10:30:00Z"
+
+    ValidationErrorResponse:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ValidationError'
+          examples:
+            validation_error:
+              summary: Validation error
+              value:
+                error: "Validation failed"
+                code: "VALIDATION_ERROR"
+                validation_errors:
+                  - field: "email"
+                    message: "Invalid email format"
+                    value: "invalid-email"
+                  - field: "name"
+                    message: "Name is required"
+                    value: null
+                timestamp: "2024-01-15T10:30:00Z"
+
+    InternalServerErrorResponse:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          examples:
+            internal_error:
+              summary: Internal server error
+              value:
+                error: "Internal server error"
+                code: "INTERNAL_ERROR"
+                details:
+                  request_id: "req-123456"
+                timestamp: "2024-01-15T10:30:00Z"
+
+    BulkCreateResponse:
+      description: Bulk creation successful
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                description: Success message
+              created_count:
+                type: integer
+                description: Number of items created
+              failed_count:
+                type: integer
+                description: Number of items that failed to create
+              created_items:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+                description: Successfully created items
+              failed_items:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    index:
+                      type: integer
+                      description: Index of the failed item
+                    error:
+                      type: string
+                      description: Error message
+                    data:
+                      $ref: '#/components/schemas/UserInput'
+                      description: The data that failed to create
+                description: Items that failed to create
+            required:
+              - message
+              - created_count
+              - failed_count
+              - created_items
+              - failed_items
+          examples:
+            bulk_success:
+              summary: Bulk creation successful
+              value:
+                message: "Bulk creation completed"
+                created_count: 2
+                failed_count: 1
+                created_items:
+                  - id: 1
+                    name: "John Doe"
+                    email: "john.doe@example.com"
+                    created_at: "2024-01-15T10:30:00Z"
+                    status: "active"
+                  - id: 2
+                    name: "Jane Smith"
+                    email: "jane.smith@example.com"
+                    created_at: "2024-01-15T10:30:00Z"
+                    status: "active"
+                failed_items:
+                  - index: 2
+                    error: "Email already exists"
+                    data:
+                      name: "Duplicate User"
+                      email: "john.doe@example.com"
+                      status: "active"
+
 tags:
-  - name: Authentication
-    description: Endpoints demonstrating different authentication methods
-  - name: Public
-    description: Public endpoints using global security 
+  - name: users
+    description: User management operations
+  - name: products
+    description: Product management operations
+  - name: files
+    description: File management operations
+  - name: documents
+    description: Document management operations 
