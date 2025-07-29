@@ -281,6 +281,138 @@ paths:
         '422':
           $ref: '#/components/responses/ValidationErrorResponse'
 
+  # 使用default状态码的端点
+  /orders/{id}:
+    get:
+      summary: Get order by ID
+      description: Retrieve an order with default response handling
+      operationId: getOrderById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Order ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          $ref: '#/components/responses/OrderResponse'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+
+  # 使用2xx状态码范围的端点
+  /notifications:
+    post:
+      summary: Send notification
+      description: Send a notification with 2xx status code range
+      operationId: sendNotification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationInput'
+      responses:
+        '2XX':
+          $ref: '#/components/responses/NotificationResponse'
+        '4XX':
+          $ref: '#/components/responses/ClientErrorResponse'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+
+  # 使用4xx状态码范围的端点
+  /payments/{id}:
+    put:
+      summary: Update payment
+      description: Update payment with 4xx status code range
+      operationId: updatePayment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Payment ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentUpdateInput'
+      responses:
+        '200':
+          $ref: '#/components/responses/PaymentResponse'
+        '4XX':
+          $ref: '#/components/responses/PaymentErrorResponse'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+
+  # 使用随机字符串状态码的端点
+  /webhooks/{event}:
+    post:
+      summary: Webhook endpoint
+      description: Webhook endpoint with custom status codes
+      operationId: webhookHandler
+      parameters:
+        - name: event
+          in: path
+          required: true
+          description: Event type
+          schema:
+            type: string
+            enum: [payment_success, payment_failed, user_registered]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookPayload'
+      responses:
+        'ACCEPTED':
+          $ref: '#/components/responses/WebhookAcceptedResponse'
+        'PROCESSING':
+          $ref: '#/components/responses/WebhookProcessingResponse'
+        'RETRY_LATER':
+          $ref: '#/components/responses/WebhookRetryResponse'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+
+  # 使用混合状态码的端点
+  /analytics/reports:
+    get:
+      summary: Generate analytics report
+      description: Generate report with mixed status code types
+      operationId: generateReport
+      parameters:
+        - name: type
+          in: query
+          required: true
+          description: Report type
+          schema:
+            type: string
+            enum: [daily, weekly, monthly, custom]
+        - name: format
+          in: query
+          required: false
+          description: Output format
+          schema:
+            type: string
+            enum: [json, csv, pdf]
+            default: json
+      responses:
+        '200':
+          $ref: '#/components/responses/ReportResponse'
+        '202':
+          $ref: '#/components/responses/ReportAcceptedResponse'
+        '4XX':
+          $ref: '#/components/responses/ReportErrorResponse'
+        'GENERATING':
+          $ref: '#/components/responses/ReportGeneratingResponse'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+
 components:
   schemas:
     User:
@@ -460,6 +592,177 @@ components:
         - code
         - validation_errors
         - timestamp
+
+    Order:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Order ID
+        user_id:
+          type: integer
+          description: User ID
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              product_id:
+                type: string
+                description: Product ID
+              quantity:
+                type: integer
+                minimum: 1
+                description: Quantity
+              price:
+                type: number
+                format: float
+                minimum: 0
+                description: Unit price
+            required:
+              - product_id
+              - quantity
+              - price
+          description: Order items
+        total_amount:
+          type: number
+          format: float
+          minimum: 0
+          description: Total order amount
+        status:
+          type: string
+          enum: [pending, confirmed, shipped, delivered, cancelled]
+          description: Order status
+        created_at:
+          type: string
+          format: date-time
+          description: Order creation timestamp
+      required:
+        - id
+        - user_id
+        - items
+        - total_amount
+        - status
+        - created_at
+
+    NotificationInput:
+      type: object
+      properties:
+        user_id:
+          type: integer
+          description: Target user ID
+        type:
+          type: string
+          enum: [email, sms, push, in_app]
+          description: Notification type
+        title:
+          type: string
+          description: Notification title
+        message:
+          type: string
+          description: Notification message
+        priority:
+          type: string
+          enum: [low, normal, high, urgent]
+          default: normal
+          description: Notification priority
+      required:
+        - user_id
+        - type
+        - title
+        - message
+
+    PaymentUpdateInput:
+      type: object
+      properties:
+        amount:
+          type: number
+          format: float
+          minimum: 0
+          description: Payment amount
+        currency:
+          type: string
+          pattern: '^[A-Z]{3}$'
+          description: Currency code
+        status:
+          type: string
+          enum: [pending, processing, completed, failed, refunded]
+          description: Payment status
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Additional payment metadata
+      required:
+        - amount
+        - currency
+        - status
+
+    WebhookPayload:
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Event ID
+        event_type:
+          type: string
+          description: Event type
+        timestamp:
+          type: string
+          format: date-time
+          description: Event timestamp
+        data:
+          type: object
+          additionalProperties: true
+          description: Event data
+        signature:
+          type: string
+          description: Webhook signature for verification
+      required:
+        - event_id
+        - event_type
+        - timestamp
+        - data
+        - signature
+
+    Report:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Report ID
+        type:
+          type: string
+          enum: [daily, weekly, monthly, custom]
+          description: Report type
+        format:
+          type: string
+          enum: [json, csv, pdf]
+          description: Report format
+        status:
+          type: string
+          enum: [generating, completed, failed]
+          description: Report status
+        download_url:
+          type: string
+          format: uri
+          description: Report download URL
+        generated_at:
+          type: string
+          format: date-time
+          description: Report generation timestamp
+        metrics:
+          type: object
+          additionalProperties: true
+          description: Report metrics
+      required:
+        - id
+        - type
+        - format
+        - status
+        - generated_at
 
   responses:
     ProductResponse:
@@ -660,6 +963,412 @@ components:
                       email: "john.doe@example.com"
                       status: "active"
 
+    OrderResponse:
+      description: Order retrieved successfully
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Order'
+          examples:
+            success:
+              summary: Successful order response
+              value:
+                id: "550e8400-e29b-41d4-a716-446655440002"
+                user_id: 1
+                items:
+                  - product_id: "PR123456"
+                    quantity: 2
+                    price: 29.99
+                  - product_id: "PR789012"
+                    quantity: 1
+                    price: 15.50
+                total_amount: 75.48
+                status: "confirmed"
+                created_at: "2024-01-15T10:30:00Z"
+
+    DefaultErrorResponse:
+      description: Default error response for all endpoints
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          examples:
+            default_error:
+              summary: Default error response
+              value:
+                error: "An unexpected error occurred"
+                code: "UNKNOWN_ERROR"
+                details:
+                  endpoint: "/api/endpoint"
+                  method: "GET"
+                timestamp: "2024-01-15T10:30:00Z"
+
+    NotificationResponse:
+      description: Notification sent successfully (2xx range)
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              notification_id:
+                type: string
+                format: uuid
+                description: Notification ID
+              status:
+                type: string
+                enum: [sent, queued, delivered, failed]
+                description: Notification status
+              sent_at:
+                type: string
+                format: date-time
+                description: When notification was sent
+              delivery_time:
+                type: number
+                format: float
+                description: Delivery time in milliseconds
+            required:
+              - notification_id
+              - status
+              - sent_at
+          examples:
+            sent:
+              summary: Notification sent successfully
+              value:
+                notification_id: "550e8400-e29b-41d4-a716-446655440003"
+                status: "sent"
+                sent_at: "2024-01-15T10:30:00Z"
+                delivery_time: 150.5
+            queued:
+              summary: Notification queued
+              value:
+                notification_id: "550e8400-e29b-41d4-a716-446655440004"
+                status: "queued"
+                sent_at: "2024-01-15T10:30:00Z"
+                delivery_time: null
+
+    ClientErrorResponse:
+      description: Client error response (4xx range)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          examples:
+            bad_request:
+              summary: Bad request error
+              value:
+                error: "Invalid notification parameters"
+                code: "INVALID_PARAMETERS"
+                details:
+                  invalid_fields: ["user_id", "type"]
+                timestamp: "2024-01-15T10:30:00Z"
+            unauthorized:
+              summary: Unauthorized error
+              value:
+                error: "Authentication required"
+                code: "UNAUTHORIZED"
+                details:
+                  required_scopes: ["notifications:write"]
+                timestamp: "2024-01-15T10:30:00Z"
+
+    PaymentResponse:
+      description: Payment updated successfully
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+                description: Payment ID
+              amount:
+                type: number
+                format: float
+                description: Payment amount
+              currency:
+                type: string
+                description: Currency code
+              status:
+                type: string
+                enum: [pending, processing, completed, failed, refunded]
+                description: Payment status
+              updated_at:
+                type: string
+                format: date-time
+                description: Last update timestamp
+            required:
+              - id
+              - amount
+              - currency
+              - status
+              - updated_at
+          examples:
+            success:
+              summary: Payment updated successfully
+              value:
+                id: "550e8400-e29b-41d4-a716-446655440005"
+                amount: 99.99
+                currency: "USD"
+                status: "completed"
+                updated_at: "2024-01-15T10:30:00Z"
+
+    PaymentErrorResponse:
+      description: Payment error response (4xx range)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          examples:
+            invalid_amount:
+              summary: Invalid payment amount
+              value:
+                error: "Invalid payment amount"
+                code: "INVALID_AMOUNT"
+                details:
+                  min_amount: 0.01
+                  max_amount: 10000.00
+                  provided_amount: -50.00
+                timestamp: "2024-01-15T10:30:00Z"
+            payment_not_found:
+              summary: Payment not found
+              value:
+                error: "Payment not found"
+                code: "PAYMENT_NOT_FOUND"
+                details:
+                  payment_id: "550e8400-e29b-41d4-a716-446655440006"
+                timestamp: "2024-01-15T10:30:00Z"
+
+    WebhookAcceptedResponse:
+      description: Webhook accepted for processing
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              status:
+                type: string
+                description: Processing status
+              message:
+                type: string
+                description: Status message
+              processing_id:
+                type: string
+                format: uuid
+                description: Processing ID for tracking
+            required:
+              - status
+              - message
+              - processing_id
+          examples:
+            accepted:
+              summary: Webhook accepted
+              value:
+                status: "ACCEPTED"
+                message: "Webhook received and queued for processing"
+                processing_id: "550e8400-e29b-41d4-a716-446655440007"
+
+    WebhookProcessingResponse:
+      description: Webhook is being processed
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              status:
+                type: string
+                description: Processing status
+              message:
+                type: string
+                description: Status message
+              estimated_completion:
+                type: string
+                format: date-time
+                description: Estimated completion time
+            required:
+              - status
+              - message
+              - estimated_completion
+          examples:
+            processing:
+              summary: Webhook processing
+              value:
+                status: "PROCESSING"
+                message: "Webhook is being processed"
+                estimated_completion: "2024-01-15T10:35:00Z"
+
+    WebhookRetryResponse:
+      description: Webhook processing failed, retry later
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              status:
+                type: string
+                description: Processing status
+              message:
+                type: string
+                description: Status message
+              retry_after:
+                type: integer
+                description: Seconds to wait before retry
+              max_retries:
+                type: integer
+                description: Maximum number of retries allowed
+            required:
+              - status
+              - message
+              - retry_after
+              - max_retries
+          examples:
+            retry:
+              summary: Webhook retry later
+              value:
+                status: "RETRY_LATER"
+                message: "Service temporarily unavailable, please retry"
+                retry_after: 300
+                max_retries: 3
+
+    ReportResponse:
+      description: Report generated successfully
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Report'
+          examples:
+            json_report:
+              summary: JSON report
+              value:
+                id: "550e8400-e29b-41d4-a716-446655440008"
+                type: "daily"
+                format: "json"
+                status: "completed"
+                download_url: "https://api.example.com/reports/550e8400-e29b-41d4-a716-446655440008/download"
+                generated_at: "2024-01-15T10:30:00Z"
+                metrics:
+                  total_users: 1250
+                  active_users: 890
+                  revenue: 15420.50
+        application/pdf:
+          schema:
+            type: string
+            format: binary
+            description: PDF report file
+        text/csv:
+          schema:
+            type: string
+            description: CSV report content
+          examples:
+            csv_report:
+              summary: CSV report
+              value: "Date,Users,Revenue\n2024-01-15,1250,15420.50\n2024-01-14,1200,14850.25"
+
+    ReportAcceptedResponse:
+      description: Report generation accepted
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              report_id:
+                type: string
+                format: uuid
+                description: Report ID
+              status:
+                type: string
+                enum: [accepted, queued]
+                description: Report status
+              estimated_completion:
+                type: string
+                format: date-time
+                description: Estimated completion time
+              progress_url:
+                type: string
+                format: uri
+                description: URL to check progress
+            required:
+              - report_id
+              - status
+              - estimated_completion
+              - progress_url
+          examples:
+            accepted:
+              summary: Report accepted
+              value:
+                report_id: "550e8400-e29b-41d4-a716-446655440009"
+                status: "accepted"
+                estimated_completion: "2024-01-15T10:45:00Z"
+                progress_url: "https://api.example.com/reports/550e8400-e29b-41d4-a716-446655440009/progress"
+
+    ReportErrorResponse:
+      description: Report generation error (4xx range)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          examples:
+            invalid_type:
+              summary: Invalid report type
+              value:
+                error: "Invalid report type"
+                code: "INVALID_REPORT_TYPE"
+                details:
+                  allowed_types: ["daily", "weekly", "monthly", "custom"]
+                  provided_type: "hourly"
+                timestamp: "2024-01-15T10:30:00Z"
+            quota_exceeded:
+              summary: Report quota exceeded
+              value:
+                error: "Report generation quota exceeded"
+                code: "QUOTA_EXCEEDED"
+                details:
+                  daily_limit: 10
+                  used_today: 10
+                  reset_time: "2024-01-16T00:00:00Z"
+                timestamp: "2024-01-15T10:30:00Z"
+
+    ReportGeneratingResponse:
+      description: Report is currently being generated
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              report_id:
+                type: string
+                format: uuid
+                description: Report ID
+              status:
+                type: string
+                description: Generation status
+              progress:
+                type: integer
+                minimum: 0
+                maximum: 100
+                description: Generation progress percentage
+              current_step:
+                type: string
+                description: Current generation step
+              estimated_completion:
+                type: string
+                format: date-time
+                description: Estimated completion time
+            required:
+              - report_id
+              - status
+              - progress
+              - current_step
+              - estimated_completion
+          examples:
+            generating:
+              summary: Report generating
+              value:
+                report_id: "550e8400-e29b-41d4-a716-446655440010"
+                status: "GENERATING"
+                progress: 65
+                current_step: "Aggregating data"
+                estimated_completion: "2024-01-15T10:40:00Z"
+
 tags:
   - name: users
     description: User management operations
@@ -668,4 +1377,14 @@ tags:
   - name: files
     description: File management operations
   - name: documents
-    description: Document management operations 
+    description: Document management operations
+  - name: orders
+    description: Order management operations
+  - name: notifications
+    description: Notification operations
+  - name: payments
+    description: Payment operations
+  - name: webhooks
+    description: Webhook operations
+  - name: analytics
+    description: Analytics and reporting operations 
