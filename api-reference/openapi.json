@@ -349,69 +349,69 @@ paths:
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
 
-  # 使用随机字符串状态码的端点
-  /webhooks/{event}:
-    post:
-      summary: Webhook endpoint
-      description: Webhook endpoint with custom status codes
-      operationId: webhookHandler
-      parameters:
-        - name: event
-          in: path
-          required: true
-          description: Event type
-          schema:
-            type: string
-            enum: [payment_success, payment_failed, user_registered]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/WebhookPayload'
-      responses:
-        'ACCEPTED':
-          $ref: '#/components/responses/WebhookAcceptedResponse'
-        'PROCESSING':
-          $ref: '#/components/responses/WebhookProcessingResponse'
-        'RETRY_LATER':
-          $ref: '#/components/responses/WebhookRetryResponse'
-        default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+  # # 使用随机字符串状态码的端点
+  # /webhooks/{event}:
+  #   post:
+  #     summary: Webhook endpoint
+  #     description: Webhook endpoint with custom status codes
+  #     operationId: webhookHandler
+  #     parameters:
+  #       - name: event
+  #         in: path
+  #         required: true
+  #         description: Event type
+  #         schema:
+  #           type: string
+  #           enum: [payment_success, payment_failed, user_registered]
+  #     requestBody:
+  #       required: true
+  #       content:
+  #         application/json:
+  #           schema:
+  #             $ref: '#/components/schemas/WebhookPayload'
+  #     responses:
+  #       'ACCEPTED':
+  #         $ref: '#/components/responses/WebhookAcceptedResponse'
+  #       'PROCESSING':
+  #         $ref: '#/components/responses/WebhookProcessingResponse'
+  #       'RETRY_LATER':
+  #         $ref: '#/components/responses/WebhookRetryResponse'
+  #       default:
+  #         $ref: '#/components/responses/DefaultErrorResponse'
 
-  # 使用混合状态码的端点
-  /analytics/reports:
-    get:
-      summary: Generate analytics report
-      description: Generate report with mixed status code types
-      operationId: generateReport
-      parameters:
-        - name: type
-          in: query
-          required: true
-          description: Report type
-          schema:
-            type: string
-            enum: [daily, weekly, monthly, custom]
-        - name: format
-          in: query
-          required: false
-          description: Output format
-          schema:
-            type: string
-            enum: [json, csv, pdf]
-            default: json
-      responses:
-        '200':
-          $ref: '#/components/responses/ReportResponse'
-        '202':
-          $ref: '#/components/responses/ReportAcceptedResponse'
-        '4XX':
-          $ref: '#/components/responses/ReportErrorResponse'
-        'GENERATING':
-          $ref: '#/components/responses/ReportGeneratingResponse'
-        default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+  # # 使用混合状态码的端点
+  # /analytics/reports:
+  #   get:
+  #     summary: Generate analytics report
+  #     description: Generate report with mixed status code types
+  #     operationId: generateReport
+  #     parameters:
+  #       - name: type
+  #         in: query
+  #         required: true
+  #         description: Report type
+  #         schema:
+  #           type: string
+  #           enum: [daily, weekly, monthly, custom]
+  #       - name: format
+  #         in: query
+  #         required: false
+  #         description: Output format
+  #         schema:
+  #           type: string
+  #           enum: [json, csv, pdf]
+  #           default: json
+  #     responses:
+  #       '200':
+  #         $ref: '#/components/responses/ReportResponse'
+  #       '202':
+  #         $ref: '#/components/responses/ReportAcceptedResponse'
+  #       '4XX':
+  #         $ref: '#/components/responses/ReportErrorResponse'
+  #       'GENERATING':
+  #         $ref: '#/components/responses/ReportGeneratingResponse'
+  #       default:
+  #         $ref: '#/components/responses/DefaultErrorResponse'
 
 components:
   schemas:
