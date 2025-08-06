@@ -150,6 +150,52 @@ paths:
         '500':
           description: Internal server error
 
+  /notifications:
+    post:
+      summary: Create a new notification
+      description: Creates a new notification with the provided information
+      operationId: createNotification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Notification'
+      responses:
+        '201':
+          description: Notification created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+        '400':
+          description: Bad request - invalid input data
+        '500':
+          description: Internal server error
+
+  /payments:
+    post:
+      summary: Create a new payment
+      description: Creates a new payment transaction with the provided information
+      operationId: createPayment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Payment'
+      responses:
+        '201':
+          description: Payment created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+        '400':
+          description: Bad request - invalid input data
+        '500':
+          description: Internal server error
+
 components:
   schemas:
     Product:
@@ -381,6 +427,165 @@ components:
             maxLength: 50
           default: ["positive", "detailed"]
 
+    Notification:
+      type: object
+      required:
+        - userId
+        - type
+        - message
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the notification
+          example: "notif_12345"
+        userId:
+          type: string
+          description: User identifier who will receive the notification
+          example: "user_98765"
+        type:
+          type: string
+          description: Type of notification
+          enum: ["email", "sms", "push", "in_app"]
+          example: "push"
+        message:
+          type: string
+          description: Notification message content
+          minLength: 1
+          maxLength: 500
+          example: "Your order #ORD-12345 has been shipped!"
+        title:
+          type: string
+          description: Notification title
+          maxLength: 100
+          example: "Order Shipped"
+        priority:
+          type: string
+          description: Notification priority level
+          enum: ["low", "medium", "high", "urgent"]
+          example: "medium"
+        scheduledAt:
+          type: string
+          description: Scheduled time for notification delivery
+          format: date-time
+          example: "2024-01-15T14:30:00Z"
+        expiresAt:
+          type: string
+          description: Expiration time for the notification
+          format: date-time
+          example: "2024-01-22T14:30:00Z"
+        read:
+          type: boolean
+          description: Whether the notification has been read
+          example: false
+        metadata:
+          type: object
+          description: Additional metadata for the notification
+          example:
+            orderId: "ORD-12345"
+            trackingNumber: "1Z999AA1234567890"
+            estimatedDelivery: "2024-01-18"
+          properties:
+            orderId:
+              type: string
+              description: Related order identifier
+              example: "ORD-12345"
+            trackingNumber:
+              type: string
+              description: Shipping tracking number
+              example: "1Z999AA1234567890"
+            estimatedDelivery:
+              type: string
+              description: Estimated delivery date
+              format: date
+              example: "2024-01-18"
+        channels:
+          type: array
+          description: Notification channels to use
+          items:
+            type: string
+            enum: ["email", "sms", "push", "in_app"]
+          example: ["push", "email"]
+        templateId:
+          type: string
+          description: Template identifier for the notification
+          example: "order_shipped_template"
+
+    Payment:
+      type: object
+      required:
+        - amount
+        - currency
+        - paymentMethod
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the payment transaction
+        transactionId:
+          type: string
+          description: External transaction identifier from payment processor
+        orderId:
+          type: string
+          description: Associated order identifier
+        amount:
+          type: number
+          description: Payment amount
+          minimum: 0
+        currency:
+          type: string
+          description: Payment currency code
+          minLength: 3
+          maxLength: 3
+        paymentMethod:
+          type: string
+          description: Method used for payment
+          enum: ["credit_card", "debit_card", "paypal", "bank_transfer", "crypto"]
+        status:
+          type: string
+          description: Payment status
+          enum: ["pending", "processing", "completed", "failed", "refunded"]
+        description:
+          type: string
+          description: Payment description
+          maxLength: 500
+        customerId:
+          type: string
+          description: Customer identifier
+        billingAddress:
+          type: object
+          description: Billing address for the payment
+          properties:
+            street:
+              type: string
+              description: Street address
+            city:
+              type: string
+              description: City
+            state:
+              type: string
+              description: State or province
+            zipCode:
+              type: string
+              description: ZIP or postal code
+            country:
+              type: string
+              description: Country
+        paymentDate:
+          type: string
+          description: Date and time of the payment
+          format: date-time
+        processingFee:
+          type: number
+          description: Processing fee amount
+          minimum: 0
+        taxAmount:
+          type: number
+          description: Tax amount
+          minimum: 0
+        metadata:
+          type: object
+          description: Additional payment metadata
+          additionalProperties: true
+
     User:
       type: object
       required:
@@ -454,7 +659,6 @@ components:
               type: string
               description: User's website URL
               format: uri
-              nullable: true
               default: null
               example: "https://johndoe.dev"
             location:
