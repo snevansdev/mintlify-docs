@@ -1,691 +1,256 @@
-openapi: 3.1.0
+openapi: 3.0.3
 info:
-  title: API with Default and Example Values
-  description: An API that demonstrates the use of default values, example values, and complete examples in OpenAPI 3.1
+  title: Query Parameter Object API
+  description: API demonstrating various query parameter object scenarios
   version: 1.0.0
-  contact:
-    name: API Support
-    email: support@example.com
-
 servers:
   - url: https://api.example.com/v1
     description: Production server
-  - url: https://staging-api.example.com/v1
-    description: Staging server
 
 paths:
-  /users:
-    post:
-      summary: Create a new user
-      description: Creates a new user with the provided information
-      operationId: createUser
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/User'
-            examples:
-              complete-example:
-                summary: Complete user example
-                description: An example with all fields populated
-                value:
-                  id: "12345"
-                  username: "john_doe"
-                  email: "john.doe@example.com"
-                  firstName: "John"
-                  lastName: "Doe"
-                  age: 30
-                  isActive: true
-                  profile:
-                    bio: "Software developer with 5 years of experience"
-                    website: "https://johndoe.dev"
-                    location: "San Francisco, CA"
-                  tags: ["developer", "backend", "python"]
-              minimal-example:
-                summary: Minimal user example
-                description: An example with only required fields
-                value:
-                  username: "jane_smith"
-                  email: "jane.smith@example.com"
+  /scenario1:
+    get:
+      summary: Query parameter containing an object
+      description: Scenario 1 - Query parameter that contains an object
+      operationId: getScenario1
+      parameters:
+        - name: filter
+          in: query
+          required: false
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+                description: Filter by name
+              age:
+                type: integer
+                description: Filter by age
+              active:
+                type: boolean
+                description: Filter by active status
       responses:
-        '201':
-          description: User created successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
-        '400':
-          description: Bad request - invalid input data
+        '200':
+          description: Successful operation
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  error:
+                  message:
                     type: string
-                    example: "Validation failed"
-                  details:
-                    type: array
-                    items:
-                      type: string
-                    example: ["Username is required", "Email format is invalid"]
-        '500':
-          description: Internal server error
+
+  /scenario2:
+    get:
+      summary: Query parameter containing object and regular parameters with name collision
+      description: Scenario 2 - Query parameter that contains object and regular parameters with name collision
+      operationId: getScenario2
+      parameters:
+        - name: filter
+          in: query
+          required: false
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+                description: Name filter in object
+              category:
+                type: string
+                description: Category filter in object
+        - name: name
+          in: query
+          required: false
+          schema:
+            type: string
+            description: Regular name parameter (collides with filter.name)
+        - name: sort
+          in: query
+          required: false
+          schema:
+            type: string
+            description: Sort parameter
+      responses:
+        '200':
+          description: Successful operation
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  error:
+                  message:
                     type: string
-                    example: "Internal server error occurred"
 
-  /products:
-    post:
-      summary: Create a new product
-      description: Creates a new product with the provided information
-      operationId: createProduct
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Product'
+  /scenario3:
+    get:
+      summary: Query parameter referencing a data model
+      description: Scenario 3 - Query parameter that references a data model
+      operationId: getScenario3
+      parameters:
+        - name: filter
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/FilterModel'
       responses:
-        '201':
-          description: Product created successfully
+        '200':
+          description: Successful operation
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Product'
-        '400':
-          description: Bad request - invalid input data
-        '500':
-          description: Internal server error
+                type: object
+                properties:
+                  message:
+                    type: string
 
-  /orders:
-    post:
-      summary: Create a new order
-      description: Creates a new order with the provided information
-      operationId: createOrder
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Order'
+  /scenario4:
+    get:
+      summary: Query parameter referencing data model with name collision
+      description: Scenario 4 - Query parameter referencing data model with regular parameter name collision
+      operationId: getScenario4
+      parameters:
+        - name: filter
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/FilterModel'
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            description: Regular status parameter (collides with filter.status)
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            description: Limit parameter
       responses:
-        '201':
-          description: Order created successfully
+        '200':
+          description: Successful operation
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Order'
-        '400':
-          description: Bad request - invalid input data
-        '500':
-          description: Internal server error
+                type: object
+                properties:
+                  message:
+                    type: string
 
-  /reviews:
-    post:
-      summary: Create a new review
-      description: Creates a new product review with the provided information
-      operationId: createReview
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Review'
+  /scenario5:
+    get:
+      summary: Query parameters with multiple objects having field name collisions
+      description: Scenario 5 - Query parameters containing multiple objects with field name collisions
+      operationId: getScenario5
+      parameters:
+        - name: userFilter
+          in: query
+          required: false
+          schema:
+            type: object
+            properties:
+              id:
+                type: string
+                description: User ID
+              name:
+                type: string
+                description: User name
+              status:
+                type: string
+                description: User status
+        - name: productFilter
+          in: query
+          required: false
+          schema:
+            type: object
+            properties:
+              id:
+                type: string
+                description: Product ID (collides with userFilter.id)
+              name:
+                type: string
+                description: Product name (collides with userFilter.name)
+              price:
+                type: number
+                description: Product price
       responses:
-        '201':
-          description: Review created successfully
+        '200':
+          description: Successful operation
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Review'
-        '400':
-          description: Bad request - invalid input data
-        '500':
-          description: Internal server error
+                type: object
+                properties:
+                  message:
+                    type: string
 
-  /notifications:
-    post:
-      summary: Create a new notification
-      description: Creates a new notification with the provided information
-      operationId: createNotification
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Notification'
+  /scenario6:
+    get:
+      summary: Query parameters referencing multiple data models with field name collisions
+      description: Scenario 6 - Query parameters referencing multiple data models with field name collisions
+      operationId: getScenario6
+      parameters:
+        - name: userFilter
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/UserFilterModel'
+        - name: orderFilter
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/OrderFilterModel'
       responses:
-        '201':
-          description: Notification created successfully
+        '200':
+          description: Successful operation
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Notification'
-        '400':
-          description: Bad request - invalid input data
-        '500':
-          description: Internal server error
-
-  /payments:
-    post:
-      summary: Create a new payment
-      description: Creates a new payment transaction with the provided information
-      operationId: createPayment
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Payment'
-      responses:
-        '201':
-          description: Payment created successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Payment'
-        '400':
-          description: Bad request - invalid input data
-        '500':
-          description: Internal server error
+                type: object
+                properties:
+                  message:
+                    type: string
 
 components:
   schemas:
-    Product:
+    FilterModel:
       type: object
-      required:
-        - name
-        - price
       properties:
-        id:
-          type: string
-          description: Unique identifier for the product
-          default: "prod_001"
-          example: "prod_12345"
         name:
           type: string
-          description: Product name
-          minLength: 1
-          maxLength: 200
-          default: "Sample Product"
-          example: "iPhone 15 Pro"
-        description:
+          description: Name filter
+        status:
           type: string
-          description: Product description
-          maxLength: 1000
-          default: "A high-quality product"
-          example: "Latest smartphone with advanced features"
-        price:
-          type: number
-          description: Product price in USD
-          minimum: 0
-          default: 99.99
-          example: 999.99
-        category:
+          description: Status filter
+        date:
           type: string
-          description: Product category
-          enum: ["electronics", "clothing", "books", "home", "sports"]
-          default: "electronics"
-          example: "electronics"
-        inStock:
-          type: boolean
-          description: Whether the product is in stock
-          default: true
-          example: true
-        tags:
-          type: array
-          description: Product tags
-          items:
-            type: string
-            minLength: 1
-            maxLength: 50
-          default: ["new", "featured"]
-          example: ["smartphone", "apple", "5g"]
-        specifications:
-          type: object
-          description: Product specifications
-          default:
-            color: "Black"
-            weight: "200g"
-            dimensions: "150x75x8mm"
-          example:
-            color: "Titanium"
-            weight: "187g"
-            dimensions: "159.9x76.7x8.25mm"
-          properties:
-            color:
-              type: string
-              description: Product color
-              default: "Black"
-              example: "Titanium"
-            weight:
-              type: string
-              description: Product weight
-              default: "200g"
-              example: "187g"
-            dimensions:
-              type: string
-              description: Product dimensions
-              default: "150x75x8mm"
-              example: "159.9x76.7x8.25mm"
+          format: date
+          description: Date filter
 
-    Order:
+    UserFilterModel:
       type: object
-      required:
-        - customerId
-        - items
       properties:
         id:
           type: string
-          description: Unique identifier for the order
-        customerId:
+          description: User ID
+        email:
           type: string
-          description: Customer identifier
-        orderDate:
+          description: User email
+        createdAt:
           type: string
-          description: Order date in ISO 8601 format
           format: date-time
+          description: User creation date
+
+    OrderFilterModel:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Order ID (collides with UserFilterModel.id)
         status:
           type: string
           description: Order status
-          enum: ["pending", "confirmed", "shipped", "delivered", "cancelled"]
-        items:
-          type: array
-          description: Order items
-          items:
-            type: object
-            properties:
-              productId:
-                type: string
-                description: Product identifier
-              quantity:
-                type: integer
-                description: Quantity ordered
-                minimum: 1
-              unitPrice:
-                type: number
-                description: Unit price
-                minimum: 0
-        shippingAddress:
-          type: object
-          description: Shipping address
-          properties:
-            street:
-              type: string
-              description: Street address
-            city:
-              type: string
-              description: City
-            state:
-              type: string
-              description: State or province
-            zipCode:
-              type: string
-              description: ZIP or postal code
-            country:
-              type: string
-              description: Country
-        totalAmount:
-          type: number
-          description: Total order amount
-          minimum: 0
-        paymentMethod:
+        createdAt:
           type: string
-          description: Payment method
-          enum: ["credit_card", "debit_card", "paypal", "bank_transfer"]
-      example:
-        id: "ord_98765"
-        customerId: "cust_12345"
-        orderDate: "2024-01-15T10:30:00Z"
-        status: "pending"
-        items:
-          - productId: "prod_12345"
-            quantity: 2
-            unitPrice: 999.99
-          - productId: "prod_67890"
-            quantity: 1
-            unitPrice: 49.99
-        shippingAddress:
-          street: "123 Main Street"
-          city: "San Francisco"
-          state: "CA"
-          zipCode: "94105"
-          country: "USA"
-        totalAmount: 2049.97
-        paymentMethod: "credit_card"
-
-    Review:
-      type: object
-      required:
-        - productId
-        - rating
-        - comment
-      properties:
-        id:
-          type: string
-          description: Unique identifier for the review
-          default: "rev_001"
-        productId:
-          type: string
-          description: Product identifier being reviewed
-          default: "prod_001"
-        userId:
-          type: string
-          description: User identifier who wrote the review
-          default: "user_001"
-        rating:
-          type: integer
-          description: Review rating from 1 to 5
-          minimum: 1
-          maximum: 5
-          default: 5
-        comment:
-          type: string
-          description: Review comment
-          minLength: 10
-          maxLength: 1000
-          default: "Great product, highly recommended!"
-        title:
-          type: string
-          description: Review title
-          maxLength: 200
-          default: "Excellent Product"
-        helpful:
-          type: integer
-          description: Number of users who found this review helpful
-          minimum: 0
-          default: 0
-        verified:
-          type: boolean
-          description: Whether the review is from a verified purchase
-          default: true
-        reviewDate:
-          type: string
-          description: Date when the review was written
           format: date-time
-          default: "2024-01-15T10:30:00Z"
-        images:
-          type: array
-          description: URLs of review images
-          items:
-            type: string
-            format: uri
-          default: []
-        tags:
-          type: array
-          description: Tags associated with the review
-          items:
-            type: string
-            minLength: 1
-            maxLength: 50
-          default: ["positive", "detailed"]
-
-    Notification:
-      type: object
-      required:
-        - userId
-        - type
-        - message
-      properties:
-        id:
-          type: string
-          description: Unique identifier for the notification
-          example: "notif_12345"
-        userId:
-          type: string
-          description: User identifier who will receive the notification
-          example: "user_98765"
-        type:
-          type: string
-          description: Type of notification
-          enum: ["email", "sms", "push", "in_app"]
-          example: "push"
-        message:
-          type: string
-          description: Notification message content
-          minLength: 1
-          maxLength: 500
-          example: "Your order #ORD-12345 has been shipped!"
-        title:
-          type: string
-          description: Notification title
-          maxLength: 100
-          example: "Order Shipped"
-        priority:
-          type: string
-          description: Notification priority level
-          enum: ["low", "medium", "high", "urgent"]
-          example: "medium"
-        scheduledAt:
-          type: string
-          description: Scheduled time for notification delivery
-          format: date-time
-          example: "2024-01-15T14:30:00Z"
-        expiresAt:
-          type: string
-          description: Expiration time for the notification
-          format: date-time
-          example: "2024-01-22T14:30:00Z"
-        read:
-          type: boolean
-          description: Whether the notification has been read
-          example: false
-        metadata:
-          type: object
-          description: Additional metadata for the notification
-          example:
-            orderId: "ORD-12345"
-            trackingNumber: "1Z999AA1234567890"
-            estimatedDelivery: "2024-01-18"
-          properties:
-            orderId:
-              type: string
-              description: Related order identifier
-              example: "ORD-12345"
-            trackingNumber:
-              type: string
-              description: Shipping tracking number
-              example: "1Z999AA1234567890"
-            estimatedDelivery:
-              type: string
-              description: Estimated delivery date
-              format: date
-              example: "2024-01-18"
-        channels:
-          type: array
-          description: Notification channels to use
-          items:
-            type: string
-            enum: ["email", "sms", "push", "in_app"]
-          example: ["push", "email"]
-        templateId:
-          type: string
-          description: Template identifier for the notification
-          example: "order_shipped_template"
-
-    Payment:
-      type: object
-      required:
-        - amount
-        - currency
-        - paymentMethod
-      properties:
-        id:
-          type: string
-          description: Unique identifier for the payment transaction
-        transactionId:
-          type: string
-          description: External transaction identifier from payment processor
-        orderId:
-          type: string
-          description: Associated order identifier
-        amount:
-          type: number
-          description: Payment amount
-          minimum: 0
-        currency:
-          type: string
-          description: Payment currency code
-          minLength: 3
-          maxLength: 3
-        paymentMethod:
-          type: string
-          description: Method used for payment
-          enum: ["credit_card", "debit_card", "paypal", "bank_transfer", "crypto"]
-        status:
-          type: string
-          description: Payment status
-          enum: ["pending", "processing", "completed", "failed", "refunded"]
-        description:
-          type: string
-          description: Payment description
-          maxLength: 500
-        customerId:
-          type: string
-          description: Customer identifier
-        billingAddress:
-          type: object
-          description: Billing address for the payment
-          properties:
-            street:
-              type: string
-              description: Street address
-            city:
-              type: string
-              description: City
-            state:
-              type: string
-              description: State or province
-            zipCode:
-              type: string
-              description: ZIP or postal code
-            country:
-              type: string
-              description: Country
-        paymentDate:
-          type: string
-          description: Date and time of the payment
-          format: date-time
-        processingFee:
-          type: number
-          description: Processing fee amount
-          minimum: 0
-        taxAmount:
-          type: number
-          description: Tax amount
-          minimum: 0
-        metadata:
-          type: object
-          description: Additional payment metadata
-          additionalProperties: true
-
-    User:
-      type: object
-      required:
-        - username
-        - email
-      properties:
-        id:
-          type: string
-          description: Unique identifier for the user
-          default: "auto-generated"
-          example: "12345"
-        username:
-          type: string
-          description: Unique username for the user
-          minLength: 3
-          maxLength: 50
-          pattern: '^[a-zA-Z0-9_]+$'
-          default: "user123"
-          example: "john_doe"
-        email:
-          type: string
-          description: User's email address
-          format: email
-          default: "user@example.com"
-          example: "john.doe@example.com"
-        firstName:
-          type: string
-          description: User's first name
-          minLength: 1
-          maxLength: 100
-          default: "John"
-          example: "John"
-        lastName:
-          type: string
-          description: User's last name
-          minLength: 1
-          maxLength: 100
-          default: "Doe"
-          example: "Doe"
-        age:
-          type: integer
-          description: User's age
-          minimum: 0
-          maximum: 150
-          default: 25
-          example: 30
-        isActive:
-          type: boolean
-          description: Whether the user account is active
-          default: true
-          example: true
-        profile:
-          type: object
-          description: User's profile information
-          default:
-            bio: "No bio provided"
-            website: null
-            location: "Unknown"
-          example:
-            bio: "Software developer with 5 years of experience"
-            website: "https://johndoe.dev"
-            location: "San Francisco, CA"
-          properties:
-            bio:
-              type: string
-              description: User's biography
-              maxLength: 500
-              default: "No bio provided"
-              example: "Software developer with 5 years of experience"
-            website:
-              type: string
-              description: User's website URL
-              format: uri
-              default: null
-              example: "https://johndoe.dev"
-            location:
-              type: string
-              description: User's location
-              maxLength: 200
-              default: "Unknown"
-              example: "San Francisco, CA"
-        tags:
-          type: array
-          description: Tags associated with the user
-          items:
-            type: string
-            minLength: 1
-            maxLength: 50
-          default: []
-          example: ["developer", "backend", "python"]
-      example:
-        id: "12345"
-        username: "john_doe"
-        email: "john.doe@example.com"
-        firstName: "John"
-        lastName: "Doe"
-        age: 30
-        isActive: true
-        profile:
-          bio: "Software developer with 5 years of experience"
-          website: "https://johndoe.dev"
-          location: "San Francisco, CA"
-        tags: ["developer", "backend", "python"] 
+          description: Order creation date (collides with UserFilterModel.createdAt)
