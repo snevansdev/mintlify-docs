@@ -11,7 +11,7 @@
   "navigation": {
     "tabs": [
       {
-        "tab": "API Reference",
+        "tab": "API Reference Direct",
         "openapi": "api-reference/openapi.json"
       },
       {
